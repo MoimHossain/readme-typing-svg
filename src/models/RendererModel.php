@@ -10,6 +10,9 @@ class RendererModel
     /** @var array<string> $lines text to display */
     public $lines;
 
+    /** @var string $sep seperator fragment */
+    public $sep;
+
     /** @var string $font Font family */
     public $font;
 
@@ -54,6 +57,7 @@ class RendererModel
 
     /** @var array<string, string> $DEFAULTS */
     private $DEFAULTS = [
+        "sep" => ";"
         "font" => "monospace",
         "weight" => "400",
         "color" => "#36BCF7",
@@ -76,7 +80,8 @@ class RendererModel
      */
     public function __construct($template, $params)
     {
-        $this->template = $template;
+        $this->template = $template;        
+        $this->sep = $this->checkSeparator($params["sep"] ?? $this->DEFAULTS["sep"]);
         $this->lines = $this->checkLines($params["lines"] ?? "");
         $this->font = $this->checkFont($params["font"] ?? $this->DEFAULTS["font"]);
         $this->weight = $this->checkNumberPositive($params["weight"] ?? $this->DEFAULTS["weight"], "Font weight");
@@ -96,7 +101,7 @@ class RendererModel
     /**
      * Validate lines and return array of string
      *
-     * @param string $lines Semicolon-separated lines parameter
+     * @param string $lines Semicolon-separated (or custom defined) lines parameter
      * @return array<string> escaped array of lines
      */
     private function checkLines($lines)
@@ -104,10 +109,24 @@ class RendererModel
         if (!$lines) {
             throw new InvalidArgumentException("Lines parameter must be set.");
         }
-        $trimmed_lines = rtrim($lines, ";");
-        $exploded = explode(";", $trimmed_lines);
+        $trimmed_lines = rtrim($lines, $this->sep);
+        $exploded = explode($this->sep, $trimmed_lines);
         // escape special characters to prevent code injection
         return array_map("htmlspecialchars", $exploded);
+    }
+
+    /**
+     * Validate the separator parameter
+     *
+     * @param string $sep separator parameter
+     * @return string validated separator
+     */
+    private function checkSeparator($sep)
+    {
+        if (strlen($sep) <= 0) {
+            return $this->DEFAULTS["sep"];
+        }
+        return $sep;
     }
 
     /**
